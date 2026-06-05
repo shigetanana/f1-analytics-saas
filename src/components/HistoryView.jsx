@@ -58,31 +58,31 @@ const DRIVER_ID_MAP = {
 };
 
 const DRIVER_CAREER_STATS = {
-  "max_verstappen": { starts: 224, wins: 66, podiums: 118, poles: 44, points: 3124.5, titles: 4, fastestLaps: 33, teams: ["Toro Rosso", "Red Bull Racing"] },
-  "hamilton": { starts: 371, wins: 106, podiums: 206, poles: 104, points: 4917.5, titles: 7, fastestLaps: 67, teams: ["McLaren", "Mercedes"] },
-  "leclerc": { starts: 162, wins: 9, podiums: 49, poles: 29, points: 1503.0, titles: 0, fastestLaps: 10, teams: ["Sauber", "Ferrari"] },
-  "norris": { starts: 143, wins: 4, podiums: 33, poles: 10, points: 1082.0, titles: 0, fastestLaps: 10, teams: ["McLaren"] },
-  "piastri": { starts: 62, wins: 2, podiums: 15, poles: 0, points: 484.0, titles: 0, fastestLaps: 3, teams: ["McLaren"] },
-  "sainz": { starts: 221, wins: 4, podiums: 28, poles: 6, points: 1284.5, titles: 0, fastestLaps: 4, teams: ["Toro Rosso", "Renault", "McLaren", "Ferrari"] },
-  "russell": { starts: 143, wins: 2, podiums: 17, poles: 3, points: 737.0, titles: 0, fastestLaps: 8, teams: ["Williams", "Mercedes"] },
-  "perez": { starts: 296, wins: 6, podiums: 41, poles: 3, points: 1651.0, titles: 0, fastestLaps: 12, teams: ["Sauber", "McLaren", "Force India", "Racing Point", "Red Bull Racing"] },
-  "alonso": { starts: 416, wins: 32, podiums: 106, poles: 22, points: 2357.0, titles: 2, fastestLaps: 26, teams: ["Minardi", "Renault", "McLaren", "Ferrari", "Alpine", "Aston Martin"] },
-  "albon": { starts: 119, wins: 0, podiums: 2, poles: 0, points: 246.0, titles: 0, fastestLaps: 0, teams: ["Toro Rosso", "Red Bull Racing", "Williams"] },
-  "tsunoda": { starts: 102, wins: 0, podiums: 0, poles: 0, points: 105.0, titles: 0, fastestLaps: 1, teams: ["AlphaTauri", "RB"] },
-  "bottas": { starts: 262, wins: 10, podiums: 67, poles: 20, points: 1799.0, titles: 0, fastestLaps: 19, teams: ["Williams", "Mercedes", "Sauber"] },
-  "hulkenberg": { starts: 242, wins: 0, podiums: 0, poles: 1, points: 583.0, titles: 0, fastestLaps: 2, teams: ["Williams", "Force India", "Sauber", "Renault", "Racing Point", "Aston Martin", "Haas"] },
-  "ocon": { starts: 172, wins: 1, podiums: 3, poles: 0, points: 451.0, titles: 0, fastestLaps: 0, teams: ["Manor", "Force India", "Racing Point", "Renault", "Alpine"] },
-  "gasly": { starts: 168, wins: 1, podiums: 4, poles: 0, points: 426.0, titles: 0, fastestLaps: 3, teams: ["Toro Rosso", "Red Bull Racing", "AlphaTauri", "Alpine"] },
-  "stroll": { starts: 181, wins: 0, podiums: 3, poles: 1, points: 300.0, titles: 0, fastestLaps: 0, teams: ["Williams", "Racing Point", "Aston Martin"] },
-  "magnussen": { starts: 200, wins: 0, podiums: 1, poles: 1, points: 204.0, titles: 0, fastestLaps: 2, teams: ["McLaren", "Renault", "Haas"] },
-  "ricciardo": { starts: 265, wins: 8, podiums: 32, poles: 3, points: 1329.0, titles: 0, fastestLaps: 16, teams: ["HRT", "Toro Rosso", "Red Bull Racing", "Renault", "McLaren", "AlphaTauri", "RB"] },
-  "colapinto": { starts: 27, wins: 0, podiums: 0, poles: 0, points: 15.0, titles: 0, fastestLaps: 0, teams: ["Williams"] },
-  "lawson": { starts: 29, wins: 0, podiums: 0, poles: 0, points: 18.0, titles: 0, fastestLaps: 0, teams: ["AlphaTauri", "RB"] },
-  "bortoleto": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 2.0, titles: 0, fastestLaps: 0, teams: ["Sauber"] },
-  "antonelli": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 34.0, titles: 0, fastestLaps: 0, teams: ["Mercedes"] },
-  "bearman": { starts: 21, wins: 0, podiums: 0, poles: 0, points: 21.0, titles: 0, fastestLaps: 0, teams: ["Ferrari", "Haas"] },
-  "doohan": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, teams: ["Alpine"] },
-  "hadjar": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, teams: ["RB"] }
+  "max_verstappen": { starts: 233, wins: 71, podiums: 127, poles: 51, points: 3444.5, titles: 4, fastestLaps: 36, teams: ["Toro Rosso", "Red Bull Racing"] },
+  "hamilton": { starts: 380, wins: 105, podiums: 202, poles: 107, points: 5018.5, titles: 7, fastestLaps: 68, teams: ["McLaren", "Mercedes", "Ferrari"] },
+  "leclerc": { starts: 172, wins: 8, podiums: 50, poles: 24, points: 1672.0, titles: 0, fastestLaps: 11, teams: ["Sauber", "Ferrari"] },
+  "norris": { starts: 151, wins: 11, podiums: 44, poles: 16, points: 1430.0, titles: 1, fastestLaps: 18, teams: ["McLaren"] },
+  "piastri": { starts: 70, wins: 9, podiums: 26, poles: 6, points: 799.0, titles: 0, fastestLaps: 9, teams: ["McLaren"] },
+  "sainz": { starts: 230, wins: 4, podiums: 29, poles: 5, points: 1336.5, titles: 0, fastestLaps: 4, teams: ["Toro Rosso", "Renault", "McLaren", "Ferrari", "Williams"] },
+  "russell": { starts: 152, wins: 5, podiums: 24, poles: 6, points: 1033.0, titles: 0, fastestLaps: 11, teams: ["Williams", "Mercedes"] },
+  "perez": { starts: 282, wins: 6, podiums: 39, poles: 3, points: 1638.0, titles: 0, fastestLaps: 12, teams: ["Sauber", "McLaren", "Force India", "Racing Point", "Red Bull Racing"] },
+  "alonso": { starts: 430, wins: 32, podiums: 106, poles: 22, points: 2393.0, titles: 2, fastestLaps: 26, teams: ["Minardi", "Renault", "McLaren", "Ferrari", "Alpine", "Aston Martin"] },
+  "albon": { starts: 128, wins: 0, podiums: 2, poles: 0, points: 313.0, titles: 0, fastestLaps: 0, teams: ["Toro Rosso", "Red Bull Racing", "Williams"] },
+  "tsunoda": { starts: 111, wins: 0, podiums: 0, poles: 0, points: 124.0, titles: 0, fastestLaps: 1, teams: ["AlphaTauri", "RB", "Red Bull Racing"] },
+  "bottas": { starts: 251, wins: 10, podiums: 67, poles: 20, points: 1797.0, titles: 0, fastestLaps: 19, teams: ["Williams", "Mercedes", "Sauber"] },
+  "hulkenberg": { starts: 250, wins: 0, podiums: 1, poles: 1, points: 622.0, titles: 0, fastestLaps: 2, teams: ["Williams", "Force India", "Sauber", "Renault", "Racing Point", "Aston Martin", "Haas"] },
+  "ocon": { starts: 180, wins: 1, podiums: 4, poles: 0, points: 484.0, titles: 0, fastestLaps: 0, teams: ["Manor", "Force India", "Racing Point", "Renault", "Alpine", "Haas"] },
+  "gasly": { starts: 177, wins: 1, podiums: 5, poles: 0, points: 458.0, titles: 0, fastestLaps: 3, teams: ["Toro Rosso", "Red Bull Racing", "AlphaTauri", "Alpine"] },
+  "stroll": { starts: 194, wins: 0, podiums: 3, poles: 1, points: 325.0, titles: 0, fastestLaps: 0, teams: ["Williams", "Racing Point", "Aston Martin"] },
+  "magnussen": { starts: 185, wins: 0, podiums: 1, poles: 1, points: 202.0, titles: 0, fastestLaps: 2, teams: ["McLaren", "Renault", "Haas"] },
+  "ricciardo": { starts: 257, wins: 8, podiums: 32, poles: 3, points: 1329.0, titles: 0, fastestLaps: 16, teams: ["HRT", "Toro Rosso", "Red Bull Racing", "Renault", "McLaren", "AlphaTauri", "RB"] },
+  "colapinto": { starts: 26, wins: 0, podiums: 0, poles: 0, points: 5.0, titles: 0, fastestLaps: 0, teams: ["Williams", "Alpine"] },
+  "lawson": { starts: 35, wins: 0, podiums: 0, poles: 0, points: 44.0, titles: 0, fastestLaps: 0, teams: ["AlphaTauri", "RB", "Red Bull Racing"] },
+  "bortoleto": { starts: 24, wins: 0, podiums: 0, poles: 0, points: 19.0, titles: 0, fastestLaps: 0, teams: ["Sauber"] },
+  "antonelli": { starts: 24, wins: 0, podiums: 3, poles: 0, points: 150.0, titles: 0, fastestLaps: 0, teams: ["Mercedes"] },
+  "bearman": { starts: 27, wins: 0, podiums: 0, poles: 0, points: 48.0, titles: 0, fastestLaps: 0, teams: ["Ferrari", "Haas"] },
+  "doohan": { starts: 7, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, teams: ["Alpine"] },
+  "hadjar": { starts: 23, wins: 0, podiums: 1, poles: 0, points: 51.0, titles: 0, fastestLaps: 0, teams: ["RB"] }
 };
 
 const getPitDetails = (driverNumber, rank, status, raceName, season, round, weather) => {
@@ -1504,12 +1504,12 @@ export default function HistoryView() {
                       {driverProfileData.totalTitles > 0 && (
                         <div style={{ display: "flex", justifyContent: "space-between", backgroundColor: "rgba(255, 214, 0, 0.08)", padding: "0.25rem 0.5rem", borderRadius: "0.25rem", border: "1px solid rgba(255, 214, 0, 0.2)" }}>
                           <span style={{ color: "var(--safety-yellow)", fontSize: "0.8rem", fontWeight: "700" }}>🏆 ワールドチャンピオン</span>
-                          <span style={{ fontWeight: "800", fontSize: "0.8rem", color: "var(--safety-yellow)" }}>{driverProfileData.totalTitles} 回</span>
+                          <span style={{ fontWeight: "800", fontSize: "0.8rem", color: "var(--safety-yellow)" }}>{driverProfileData.totalTitles}</span>
                         </div>
                       )}
 
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>出走回数 (Starts)</span>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>出走数 (Starts)</span>
                         <span style={{ fontWeight: "700", fontSize: "0.8rem" }}>{driverProfileData.totalRaces}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -1528,7 +1528,7 @@ export default function HistoryView() {
                       {/* Fastest Laps */}
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>ファステストラップ</span>
-                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--telemetry-green)" }}>{driverProfileData.totalFastestLaps} 回</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--telemetry-green)" }}>{driverProfileData.totalFastestLaps}</span>
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
