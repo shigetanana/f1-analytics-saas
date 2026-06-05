@@ -245,6 +245,23 @@ export default function HistoryView() {
         }
       }
 
+      // Resolve current/selected season team dynamically
+      let currentTeam = "F1 Driver";
+      const seasonRaces = races.filter(r => r.season === season);
+      if (seasonRaces.length > 0) {
+        const lastRaceOfSeason = seasonRaces[seasonRaces.length - 1];
+        const result = lastRaceOfSeason.Results && lastRaceOfSeason.Results[0];
+        if (result && result.Constructor) {
+          currentTeam = result.Constructor.name;
+        }
+      } else if (races.length > 0) {
+        const lastRace = races[races.length - 1];
+        const result = lastRace.Results && lastRace.Results[0];
+        if (result && result.Constructor) {
+          currentTeam = result.Constructor.name;
+        }
+      }
+
       setDriverProfileData({
         givenName: driverObj.givenName,
         familyName: driverObj.familyName,
@@ -259,7 +276,8 @@ export default function HistoryView() {
         totalWins,
         totalPodiums,
         totalPoles,
-        totalPoints: parseFloat(totalPoints.toFixed(1))
+        totalPoints: parseFloat(totalPoints.toFixed(1)),
+        currentTeam: currentTeam
       });
 
     } catch (err) {
@@ -1349,7 +1367,7 @@ export default function HistoryView() {
                     {driverProfileData.fullName}
                   </h2>
                   <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    {DRIVERS.find(d => d.code === driverProfileData.code) ? TEAMS[DRIVERS.find(d => d.code === driverProfileData.code).teamId]?.name : "F1 Driver"}
+                    {driverProfileData.currentTeam}
                   </div>
                 </div>
 
