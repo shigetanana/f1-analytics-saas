@@ -96,6 +96,110 @@ export default function HistoryView() {
   const [driverAId, setDriverAId] = useState("verstappen");
   const [driverBId, setDriverBId] = useState("leclerc");
 
+  // Driver Dynamic Profile Modal States
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [driverProfileData, setDriverProfileData] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [errorProfile, setErrorProfile] = useState("");
+
+  // Map local driver IDs to Ergast/Jolpi.ca driver IDs
+  const getErgastDriverId = (id) => {
+    if (id === "verstappen") return "max_verstappen";
+    return id;
+  };
+
+  const fetchDriverProfile = async (driverId) => {
+    setLoadingProfile(true);
+    setErrorProfile("");
+    setDriverProfileData(null);
+    setIsProfileModalOpen(true);
+
+    const apiDriverId = getErgastDriverId(driverId);
+    const profileUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}.json`;
+    const resultsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results.json?limit=1000`;
+    const poleUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/qualifying.json?position=1&limit=1`;
+
+    try {
+      const [profileRes, resultsRes, poleRes] = await Promise.all([
+        fetch(profileUrl),
+        fetch(resultsUrl),
+        fetch(poleUrl)
+      ]);
+
+      if (!profileRes.ok) throw new Error("プロフィールデータの取得に失敗しました。");
+      if (!resultsRes.ok) throw new Error("レース結果データの取得に失敗しました。");
+      if (!poleRes.ok) throw new Error("予選データの取得に失敗しました。");
+
+      const [profileData, resultsData, poleData] = await Promise.all([
+        profileRes.json(),
+        resultsRes.json(),
+        poleRes.json()
+      ]);
+
+      const driverObj = profileData.MRData.DriverTable.Drivers[0];
+      if (!driverObj) throw new Error("ドライバー情報が見つかりませんでした。");
+
+      const races = resultsData.MRData.RaceTable.Races || [];
+      const totalRaces = parseInt(resultsData.MRData.total) || races.length;
+      
+      let totalWins = 0;
+      let totalPoints = 0.0;
+      let totalPodiums = 0;
+
+      races.forEach(race => {
+        const result = race.Results && race.Results[0];
+        if (result) {
+          const pos = result.position;
+          const points = parseFloat(result.points) || 0.0;
+          totalPoints += points;
+          if (pos === "1") {
+            totalWins++;
+          }
+          if (pos === "1" || pos === "2" || pos === "3") {
+            totalPodiums++;
+          }
+        }
+      });
+
+      const totalPoles = parseInt(poleData.MRData.total) || 0;
+
+      // Calculate Age
+      let age = null;
+      if (driverObj.dateOfBirth) {
+        const birthDate = new Date(driverObj.dateOfBirth);
+        const today = new Date();
+        age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+      }
+
+      setDriverProfileData({
+        givenName: driverObj.givenName,
+        familyName: driverObj.familyName,
+        fullName: `${driverObj.givenName} ${driverObj.familyName}`,
+        dateOfBirth: driverObj.dateOfBirth,
+        age: age,
+        nationality: driverObj.nationality,
+        permanentNumber: driverObj.permanentNumber || "N/A",
+        code: driverObj.code || "N/A",
+        wikipediaUrl: driverObj.url,
+        totalRaces,
+        totalWins,
+        totalPodiums,
+        totalPoles,
+        totalPoints: parseFloat(totalPoints.toFixed(1))
+      });
+
+    } catch (err) {
+      console.error("Failed to fetch driver career stats:", err);
+      setErrorProfile(err.message || "データの読み込み中にエラーが発生しました。");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
   // API demo state
   const [apiEndpoint, setApiEndpoint] = useState("drivers");
   const [apiResponse, setApiResponse] = useState(null);
@@ -849,15 +953,24 @@ export default function HistoryView() {
                         </td>
                       </tr>
                     ) : filteredStandings.length > 0 ? (
-                      filteredStandings.map((row) => (
-                        <tr key={row.rank}>
-                          <td style={{ fontWeight: "bold", fontFamily: "var(--font-heading)" }}>P{row.rank}</td>
-                          <td style={{ fontWeight: "600" }}>{row.name}</td>
-                          {dbTab === "drivers" && <td>{row.team}</td>}
-                          <td style={{ textAlign: "right" }}>{row.wins}</td>
-                          <td style={{ textAlign: "right", fontWeight: "700", color: "var(--drs-cyan)" }}>{row.points}</td>
-                        </tr>
-                      ))
+                      filteredStandings.map((row) => {
+                        const handleRowClick = () => {
+                          const localDriver = DRIVERS.find(d => 
+                            d.name.toLowerCase().replace(/[^a-z]/g, "") === row.name.toLowerCase().replace(/[^a-z]/g, "")
+                          );
+                          const driverId = localDriver ? localDriver.id : row.name.toLowerCase().replace(/\s+/g, "_");
+                          fetchDriverProfile(driverId);
+                        };
+                        return (
+                          <tr key={row.rank} className="clickable-row" onClick={handleRowClick}>
+                            <td style={{ fontWeight: "bold", fontFamily: "var(--font-heading)" }}>P{row.rank}</td>
+                            <td style={{ fontWeight: "600" }}>{row.name}</td>
+                            {dbTab === "drivers" && <td>{row.team}</td>}
+                            <td style={{ textAlign: "right" }}>{row.wins}</td>
+                            <td style={{ textAlign: "right", fontWeight: "700", color: "var(--drs-cyan)" }}>{row.points}</td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td colSpan={dbTab === "drivers" ? 5 : 4} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
@@ -981,11 +1094,17 @@ export default function HistoryView() {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
                   <div style={{ fontSize: "1.25rem", fontWeight: "bold", fontFamily: "var(--font-heading)" }}>{driverA.name}</div>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>#{driverA.number} • {TEAMS[driverA.teamId].name}</span>
+                  <button onClick={() => fetchDriverProfile(driverA.id)} style={{ fontSize: "0.65rem", color: "var(--drs-cyan)", border: "none", background: "none", padding: 0, marginTop: "0.25rem", cursor: "pointer", textDecoration: "underline" }}>
+                    プロフィール詳細 ↗
+                  </button>
                 </div>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: "900", fontStyle: "italic", color: "var(--text-muted)", fontSize: "1.5rem" }}>VS</div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                   <div style={{ fontSize: "1.25rem", fontWeight: "bold", fontFamily: "var(--font-heading)" }}>{driverB.name}</div>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>#{driverB.number} • {TEAMS[driverB.teamId].name}</span>
+                  <button onClick={() => fetchDriverProfile(driverB.id)} style={{ fontSize: "0.65rem", color: "var(--drs-cyan)", border: "none", background: "none", padding: 0, marginTop: "0.25rem", cursor: "pointer", textDecoration: "underline" }}>
+                    プロフィール詳細 ↗
+                  </button>
                 </div>
               </div>
             )}
@@ -1124,6 +1243,109 @@ export default function HistoryView() {
         </div>
 
       </div>
+
+      {/* Driver Profile Modal */}
+      {isProfileModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsProfileModalOpen(false)}>
+          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setIsProfileModalOpen(false)}>
+              &times;
+            </button>
+            
+            {loadingProfile ? (
+              <div style={{ padding: "3rem", textAlign: "center", color: "var(--drs-cyan)", fontFamily: "var(--font-mono)" }}>
+                <div className="spinner" style={{ marginBottom: "1rem" }}></div>
+                <div>📡 Jolpi.ca F1 データベースから最新の統計を取得中...</div>
+              </div>
+            ) : errorProfile ? (
+              <div style={{ padding: "2rem", textAlign: "center" }}>
+                <span style={{ fontSize: "2rem" }}>⚠️</span>
+                <p style={{ color: "var(--f1-red)", marginTop: "1rem" }}>{errorProfile}</p>
+                <button className="btn" style={{ marginTop: "1rem", backgroundColor: "var(--border-color)", padding: "0.5rem 1rem" }} onClick={() => setIsProfileModalOpen(false)}>閉じる</button>
+              </div>
+            ) : driverProfileData ? (
+              <div>
+                {/* Header */}
+                <div style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "1rem", marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                    <span style={{ fontSize: "1.5rem" }}>
+                      {DRIVERS.find(d => d.code === driverProfileData.code)?.flag || "🏳️"}
+                    </span>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "600", textTransform: "uppercase", letterSpacing: "1px" }}>
+                      {driverProfileData.nationality}
+                    </span>
+                    <span style={{ marginLeft: "auto", fontSize: "1.25rem", fontWeight: "bold", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                      #{driverProfileData.permanentNumber}
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: "1.75rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "var(--text-primary)" }}>
+                    {driverProfileData.fullName}
+                  </h2>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                    {DRIVERS.find(d => d.code === driverProfileData.code) ? TEAMS[DRIVERS.find(d => d.code === driverProfileData.code).teamId]?.name : "F1 Driver"}
+                  </div>
+                </div>
+
+                {/* Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                  {/* Bio */}
+                  <div>
+                    <h3 style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "0.75rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.25rem" }}>基本情報</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>生年月日</span>
+                        <span style={{ fontWeight: "600", fontSize: "0.8rem" }}>{driverProfileData.dateOfBirth}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>年齢</span>
+                        <span style={{ fontWeight: "600", fontSize: "0.8rem" }}>{driverProfileData.age} 歳</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>略称 (Code)</span>
+                        <span style={{ fontWeight: "600", fontSize: "0.8rem", fontFamily: "var(--font-mono)", color: "var(--f1-red)" }}>{driverProfileData.code}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Career Stats */}
+                  <div>
+                    <h3 style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "0.75rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.25rem" }}>通算スタッツ (最新)</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>出走回数 (Starts)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem" }}>{driverProfileData.totalRaces}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>優勝数 (Wins)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--safety-yellow)" }}>{driverProfileData.totalWins}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>表彰台 (Podiums)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--drs-cyan)" }}>{driverProfileData.totalPodiums}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>ポールポジション (Poles)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--text-primary)" }}>{driverProfileData.totalPoles}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>累計ポイント (Points)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.85rem", color: "var(--f1-red)", fontFamily: "var(--font-mono)" }}>{driverProfileData.totalPoints} pts</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wiki Link */}
+                <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
+                  <a href={driverProfileData.wikipediaUrl} target="_blank" rel="noopener noreferrer" className="btn btn-cyan" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", padding: "0.4rem 0.8rem", textDecoration: "none" }}>
+                    Wikipediaで開く ↗
+                  </a>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

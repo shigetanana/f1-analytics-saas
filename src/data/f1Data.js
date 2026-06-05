@@ -19,7 +19,7 @@ export const DRIVERS = [
   { id: "doohan", name: "Jack Doohan", code: "DOO", number: 7, teamId: "alpine", flag: "🇦🇺", skill: 82, tireMgmt: 81, overtaking: 82, defense: 82, rainSkill: 80, qualySpeed: 83 },
   { id: "hulkenberg", name: "Nico Hulkenberg", code: "HUL", number: 27, teamId: "sauber", flag: "🇩🇪", skill: 87, tireMgmt: 85, overtaking: 85, defense: 86, rainSkill: 87, qualySpeed: 91 },
   { id: "bortoleto", name: "Gabriel Bortoleto", code: "BOR", number: 5, teamId: "sauber", flag: "🇧🇷", skill: 84, tireMgmt: 84, overtaking: 83, defense: 83, rainSkill: 82, qualySpeed: 84 },
-  { id: "oコン", name: "Esteban Ocon", code: "OCO", number: 31, teamId: "haas", flag: "🇫🇷", skill: 87, tireMgmt: 88, overtaking: 85, defense: 89, rainSkill: 89, qualySpeed: 86 },
+  { id: "ocon", name: "Esteban Ocon", code: "OCO", number: 31, teamId: "haas", flag: "🇫🇷", skill: 87, tireMgmt: 88, overtaking: 85, defense: 89, rainSkill: 89, qualySpeed: 86 },
   { id: "bearman", name: "Oliver Bearman", code: "BEA", number: 87, teamId: "haas", flag: "🇬🇧", skill: 86, tireMgmt: 85, overtaking: 87, defense: 85, rainSkill: 85, qualySpeed: 87 }
 ];
 
