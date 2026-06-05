@@ -57,6 +57,34 @@ const DRIVER_ID_MAP = {
   "kimi_raikkonen": "raikkonen"
 };
 
+const DRIVER_CAREER_STATS = {
+  "max_verstappen": { starts: 224, wins: 66, podiums: 118, poles: 44, points: 3124.5 },
+  "hamilton": { starts: 371, wins: 106, podiums: 206, poles: 104, points: 4917.5 },
+  "leclerc": { starts: 162, wins: 9, podiums: 49, poles: 29, points: 1503.0 },
+  "norris": { starts: 143, wins: 4, podiums: 33, poles: 10, points: 1082.0 },
+  "piastri": { starts: 62, wins: 2, podiums: 15, poles: 0, points: 484.0 },
+  "sainz": { starts: 221, wins: 4, podiums: 28, poles: 6, points: 1284.5 },
+  "russell": { starts: 143, wins: 2, podiums: 17, poles: 3, points: 737.0 },
+  "perez": { starts: 296, wins: 6, podiums: 41, poles: 3, points: 1651.0 },
+  "alonso": { starts: 416, wins: 32, podiums: 106, poles: 22, points: 2357.0 },
+  "albon": { starts: 119, wins: 0, podiums: 2, poles: 0, points: 246.0 },
+  "tsunoda": { starts: 102, wins: 0, podiums: 0, poles: 0, points: 105.0 },
+  "bottas": { starts: 262, wins: 10, podiums: 67, poles: 20, points: 1799.0 },
+  "hulkenberg": { starts: 242, wins: 0, podiums: 0, poles: 1, points: 583.0 },
+  "ocon": { starts: 172, wins: 1, podiums: 3, poles: 0, points: 451.0 },
+  "gasly": { starts: 168, wins: 1, podiums: 4, poles: 0, points: 426.0 },
+  "stroll": { starts: 181, wins: 0, podiums: 3, poles: 1, points: 300.0 },
+  "magnussen": { starts: 200, wins: 0, podiums: 1, poles: 1, points: 204.0 },
+  "ricciardo": { starts: 265, wins: 8, podiums: 32, poles: 3, points: 1329.0 },
+  "colapinto": { starts: 27, wins: 0, podiums: 0, poles: 0, points: 15.0 },
+  "lawson": { starts: 29, wins: 0, podiums: 0, poles: 0, points: 18.0 },
+  "bortoleto": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 2.0 },
+  "antonelli": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 34.0 },
+  "bearman": { starts: 21, wins: 0, podiums: 0, poles: 0, points: 21.0 },
+  "doohan": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 0.0 },
+  "hadjar": { starts: 18, wins: 0, podiums: 0, poles: 0, points: 0.0 }
+};
+
 const getPitDetails = (driverNumber, rank, status, raceName, season, round, weather) => {
   const nameLower = (raceName || "").toLowerCase();
   
@@ -185,53 +213,121 @@ export default function HistoryView() {
     setIsProfileModalOpen(true);
 
     const apiDriverId = getErgastDriverId(driverId);
+    
+    // API Endpoints for 2026 differences and profile
+    const isModern = season === "2026";
     const profileUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}.json`;
-    const resultsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results.json?limit=1000`;
-    const poleUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/qualifying.json?position=1&limit=1`;
+    const standings2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/driverStandings.json`;
+    const results2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/results.json`;
+    const poles2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/qualifying.json?position=1&limit=1`;
+    
+    // For past seasons, query team info pin-pointed
+    const pastSeasonUrl = !isModern ? `https://api.jolpi.ca/ergast/f1/${season}/drivers/${apiDriverId}/driverStandings.json` : null;
 
     try {
-      const [profileRes, resultsRes, poleRes] = await Promise.all([
+      const requests = [
         fetch(profileUrl),
-        fetch(resultsUrl),
-        fetch(poleUrl)
-      ]);
+        fetch(standings2026Url),
+        fetch(results2026Url),
+        fetch(poles2026Url)
+      ];
+      if (pastSeasonUrl) {
+        requests.push(fetch(pastSeasonUrl));
+      }
 
-      if (!profileRes.ok) throw new Error("プロフィールデータの取得に失敗しました。");
-      if (!resultsRes.ok) throw new Error("レース結果データの取得に失敗しました。");
-      if (!poleRes.ok) throw new Error("予選データの取得に失敗しました。");
+      const responses = await Promise.all(requests);
+      
+      for (const res of responses) {
+        if (!res.ok) throw new Error("データの取得に失敗しました。");
+      }
 
-      const [profileData, resultsData, poleData] = await Promise.all([
-        profileRes.json(),
-        resultsRes.json(),
-        poleRes.json()
-      ]);
+      const jsonPromises = responses.map(r => r.json());
+      const data = await Promise.all(jsonPromises);
+
+      const profileData = data[0];
+      const standings2026Data = data[1];
+      const results2026Data = data[2];
+      const poles2026Data = data[3];
+      const pastSeasonData = pastSeasonUrl ? data[4] : null;
 
       const driverObj = profileData.MRData.DriverTable.Drivers[0];
       if (!driverObj) throw new Error("ドライバー情報が見つかりませんでした。");
 
-      const races = resultsData.MRData.RaceTable.Races || [];
-      const totalRaces = parseInt(resultsData.MRData.total) || races.length;
-      
-      let totalWins = 0;
-      let totalPoints = 0.0;
-      let totalPodiums = 0;
+      // 1. Gather 2026 Delta wins and points
+      let wins2026 = 0;
+      let points2026 = 0.0;
+      try {
+        const standingsList = standings2026Data.MRData.StandingsTable.StandingsLists[0];
+        const standing = standingsList && standingsList.DriverStandings && standingsList.DriverStandings[0];
+        if (standing) {
+          wins2026 = parseInt(standing.wins) || 0;
+          points2026 = parseFloat(standing.points) || 0.0;
+        }
+      } catch (err) {
+        console.warn("2026 standings parsing error:", err);
+      }
 
-      races.forEach(race => {
-        const result = race.Results && race.Results[0];
-        if (result) {
-          const pos = result.position;
-          const points = parseFloat(result.points) || 0.0;
-          totalPoints += points;
-          if (pos === "1") {
-            totalWins++;
+      // 2. Gather 2026 Delta starts, podiums, and team
+      let starts2026 = 0;
+      let podiums2026 = 0;
+      let team2026 = "";
+      try {
+        const races2026 = results2026Data.MRData.RaceTable.Races || [];
+        starts2026 = parseInt(results2026Data.MRData.total) || races2026.length;
+        races2026.forEach(race => {
+          const res = race.Results && race.Results[0];
+          if (res) {
+            const pos = res.position;
+            if (pos === "1" || pos === "2" || pos === "3") {
+              podiums2026++;
+            }
+            if (!team2026 && res.Constructor) {
+              team2026 = res.Constructor.name;
+            }
           }
-          if (pos === "1" || pos === "2" || pos === "3") {
-            totalPodiums++;
+        });
+      } catch (err) {
+        console.warn("2026 results parsing error:", err);
+      }
+
+      // 3. Gather 2026 Delta poles
+      let poles2026 = 0;
+      try {
+        poles2026 = parseInt(poles2026Data.MRData.total) || 0;
+      } catch (err) {
+        console.warn("2026 poles parsing error:", err);
+      }
+
+      // Resolve team based on active season
+      let currentTeam = "F1 Driver";
+      if (pastSeasonData) {
+        try {
+          const standingsList = pastSeasonData.MRData.StandingsTable.StandingsLists[0];
+          const standing = standingsList && standingsList.DriverStandings && standingsList.DriverStandings[0];
+          if (standing && standing.Constructors && standing.Constructors[0]) {
+            currentTeam = standing.Constructors[0].name;
+          }
+        } catch (err) {
+          console.warn("Past season parsing error:", err);
+        }
+      } else {
+        if (team2026) {
+          currentTeam = team2026;
+        } else {
+          const localDriver = DRIVERS.find(d => d.id === driverId);
+          if (localDriver && TEAMS[localDriver.teamId]) {
+            currentTeam = TEAMS[localDriver.teamId].name;
           }
         }
-      });
+      }
 
-      const totalPoles = parseInt(poleData.MRData.total) || 0;
+      // Merge with 2025 Career Stats Baseline
+      const baseline = DRIVER_CAREER_STATS[apiDriverId] || { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0 };
+      const totalRaces = baseline.starts + starts2026;
+      const totalWins = baseline.wins + wins2026;
+      const totalPodiums = baseline.podiums + podiums2026;
+      const totalPoles = baseline.poles + poles2026;
+      const totalPoints = parseFloat((baseline.points + points2026).toFixed(1));
 
       // Calculate Age
       let age = null;
@@ -242,23 +338,6 @@ export default function HistoryView() {
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
           age--;
-        }
-      }
-
-      // Resolve current/selected season team dynamically
-      let currentTeam = "F1 Driver";
-      const seasonRaces = races.filter(r => r.season === season);
-      if (seasonRaces.length > 0) {
-        const lastRaceOfSeason = seasonRaces[seasonRaces.length - 1];
-        const result = lastRaceOfSeason.Results && lastRaceOfSeason.Results[0];
-        if (result && result.Constructor) {
-          currentTeam = result.Constructor.name;
-        }
-      } else if (races.length > 0) {
-        const lastRace = races[races.length - 1];
-        const result = lastRace.Results && lastRace.Results[0];
-        if (result && result.Constructor) {
-          currentTeam = result.Constructor.name;
         }
       }
 
@@ -276,8 +355,8 @@ export default function HistoryView() {
         totalWins,
         totalPodiums,
         totalPoles,
-        totalPoints: parseFloat(totalPoints.toFixed(1)),
-        currentTeam: currentTeam
+        totalPoints,
+        currentTeam
       });
 
     } catch (err) {
