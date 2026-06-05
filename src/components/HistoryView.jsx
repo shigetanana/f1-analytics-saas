@@ -9,6 +9,54 @@ import {
 } from "lucide-react";
 import { DRIVERS, TEAMS, STANDINGS_2024, STANDINGS_2025, getWeatherDetails } from "../data/f1Data";
 
+const DRIVER_ID_MAP = {
+  "verstappen": "max_verstappen",
+  "max_verstappen": "max_verstappen",
+  "hamilton": "hamilton",
+  "leclerc": "leclerc",
+  "norris": "norris",
+  "piastri": "piastri",
+  "sainz": "sainz",
+  "russell": "russell",
+  "antonelli": "antonelli",
+  "perez": "perez",
+  "alonso": "alonso",
+  "stroll": "stroll",
+  "albon": "albon",
+  "tsunoda": "tsunoda",
+  "hadjar": "hadjar",
+  "gasly": "gasly",
+  "doohan": "doohan",
+  "hulkenberg": "hulkenberg",
+  "bortoleto": "bortoleto",
+  "ocon": "ocon",
+  "bearman": "bearman",
+  "lawson": "lawson",
+  "liam_lawson": "lawson",
+  "colapinto": "colapinto",
+  "franco_colapinto": "colapinto",
+  "bottas": "bottas",
+  "valtteri_bottas": "bottas",
+  "alexander_albon": "albon",
+  "alex_albon": "albon",
+  "nico_hulkenberg": "hulkenberg",
+  "sergio_perez": "perez",
+  "kimi_antonelli": "antonelli",
+  "andrea_kimi_antonelli": "antonelli",
+  "magnussen": "magnussen",
+  "kevin_magnussen": "magnussen",
+  "sargeant": "sargeant",
+  "logan_sargeant": "sargeant",
+  "ricciardo": "ricciardo",
+  "daniel_ricciardo": "ricciardo",
+  "zhou": "zhou",
+  "guanyu_zhou": "zhou",
+  "vettel": "vettel",
+  "sebastian_vettel": "vettel",
+  "raikkonen": "raikkonen",
+  "kimi_raikkonen": "raikkonen"
+};
+
 const getPitDetails = (driverNumber, rank, status, raceName, season, round, weather) => {
   const nameLower = (raceName || "").toLowerCase();
   
@@ -102,10 +150,32 @@ export default function HistoryView() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorProfile, setErrorProfile] = useState("");
 
-  // Map local driver IDs to Ergast/Jolpi.ca driver IDs
-  const getErgastDriverId = (id) => {
-    if (id === "verstappen") return "max_verstappen";
-    return id;
+  // Map local driver IDs or raw names to Ergast/Jolpi.ca driver IDs
+  const getErgastDriverId = (idOrName) => {
+    if (!idOrName) return "";
+    
+    const normalized = idOrName
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+    
+    if (DRIVER_ID_MAP[normalized]) {
+      return DRIVER_ID_MAP[normalized];
+    }
+    
+    const snakeCase = normalized.replace(/\s+/g, "_");
+    if (DRIVER_ID_MAP[snakeCase]) {
+      return DRIVER_ID_MAP[snakeCase];
+    }
+    
+    const parts = normalized.split(/\s+/);
+    const lastName = parts[parts.length - 1];
+    if (DRIVER_ID_MAP[lastName]) {
+      return DRIVER_ID_MAP[lastName];
+    }
+    
+    return lastName;
   };
 
   const fetchDriverProfile = async (driverId) => {
@@ -955,10 +1025,7 @@ export default function HistoryView() {
                     ) : filteredStandings.length > 0 ? (
                       filteredStandings.map((row) => {
                         const handleRowClick = () => {
-                          const localDriver = DRIVERS.find(d => 
-                            d.name.toLowerCase().replace(/[^a-z]/g, "") === row.name.toLowerCase().replace(/[^a-z]/g, "")
-                          );
-                          const driverId = localDriver ? localDriver.id : row.name.toLowerCase().replace(/\s+/g, "_");
+                          const driverId = getErgastDriverId(row.name);
                           fetchDriverProfile(driverId);
                         };
                         return (
