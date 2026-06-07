@@ -419,16 +419,16 @@ export default function HistoryView() {
   };
 
   const CONSTRUCTOR_CAREER_STATS = {
-    "ferrari": { starts: 1127, wins: 248, podiums: 837, poles: 254, points: 10627.0, titles: 16, fastestLaps: 266 },
-    "mclaren": { starts: 998, wins: 203, podiums: 561, poles: 178, points: 7693.5, titles: 10, fastestLaps: 184 },
-    "red_bull": { starts: 422, wins: 130, podiums: 298, poles: 111, points: 8175.5, titles: 6, fastestLaps: 103 },
-    "mercedes": { starts: 347, wins: 136, podiums: 317, poles: 149, points: 8080.5, titles: 8, fastestLaps: 118 },
-    "williams": { starts: 863, wins: 114, podiums: 314, poles: 128, points: 3777.0, titles: 9, fastestLaps: 134 },
-    "sauber": { starts: 421, wins: 0, podiums: 11, poles: 0, points: 587.0, titles: 0, fastestLaps: 3 },
-    "haas": { starts: 214, wins: 0, podiums: 0, poles: 1, points: 386.0, titles: 0, fastestLaps: 3 },
-    "alpine": { starts: 114, wins: 1, podiums: 6, poles: 0, points: 535.0, titles: 0, fastestLaps: 1 },
-    "aston_martin": { starts: 124, wins: 0, podiums: 9, poles: 0, points: 595.0, titles: 0, fastestLaps: 3 },
-    "rb": { starts: 48, wins: 0, podiums: 1, poles: 0, points: 138.0, titles: 0, fastestLaps: 1 }
+    "ferrari": { starts: 1127, wins: 248, podiums: 837, poles: 254, points: 10627.0, titles: 16, fastestLaps: 266, principal: "フレデリック・バスール" },
+    "mclaren": { starts: 998, wins: 203, podiums: 561, poles: 178, points: 7693.5, titles: 10, fastestLaps: 184, principal: "アンドレア・ステラ" },
+    "red_bull": { starts: 422, wins: 130, podiums: 298, poles: 111, points: 8175.5, titles: 6, fastestLaps: 103, principal: "クリスチャン・ホーナー" },
+    "mercedes": { starts: 347, wins: 136, podiums: 317, poles: 149, points: 8080.5, titles: 8, fastestLaps: 118, principal: "トト・ヴォルフ" },
+    "williams": { starts: 863, wins: 114, podiums: 314, poles: 128, points: 3777.0, titles: 9, fastestLaps: 134, principal: "ジェームス・ボウルズ" },
+    "sauber": { starts: 421, wins: 0, podiums: 11, poles: 0, points: 587.0, titles: 0, fastestLaps: 3, principal: "ジョナサン・ウィートリー" },
+    "haas": { starts: 214, wins: 0, podiums: 0, poles: 1, points: 386.0, titles: 0, fastestLaps: 3, principal: "小松礼雄" },
+    "alpine": { starts: 114, wins: 1, podiums: 6, poles: 0, points: 535.0, titles: 0, fastestLaps: 1, principal: "オリバー・オークス" },
+    "aston_martin": { starts: 124, wins: 0, podiums: 9, poles: 0, points: 595.0, titles: 0, fastestLaps: 3, principal: "マイク・クラック" },
+    "rb": { starts: 48, wins: 0, podiums: 1, poles: 0, points: 138.0, titles: 0, fastestLaps: 1, principal: "ローラン・メキース" }
   };
 
   const fetchTeamProfile = async (constructorId) => {
@@ -570,7 +570,8 @@ export default function HistoryView() {
         totalPoints,
         totalTitles,
         totalFastestLaps,
-        drivers
+        drivers,
+        principal: baseline.principal || "N/A"
       });
 
     } catch (err) {
@@ -1801,6 +1802,10 @@ export default function HistoryView() {
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>本拠地国籍</span>
                         <span style={{ fontWeight: "600", fontSize: "0.8rem" }}>{teamProfileData.nationality}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>チーム代表</span>
+                        <span style={{ fontWeight: "600", fontSize: "0.8rem" }}>{teamProfileData.principal}</span>
                       </div>
                       
                       {/* Active Drivers */}
