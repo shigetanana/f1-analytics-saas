@@ -178,6 +178,12 @@ export default function HistoryView() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorProfile, setErrorProfile] = useState("");
 
+  // Team Dynamic Profile Modal States
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [teamProfileData, setTeamProfileData] = useState(null);
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [errorTeam, setErrorTeam] = useState("");
+
   // Map local driver IDs or raw names to Ergast/Jolpi.ca driver IDs
   const getErgastDriverId = (idOrName) => {
     if (!idOrName) return "";
@@ -382,6 +388,198 @@ export default function HistoryView() {
     }
   };
 
+  const CONSTRUCTOR_ID_MAP = {
+    "mclaren": "mclaren",
+    "ferrari": "ferrari",
+    "red_bull_racing": "red_bull",
+    "red_bull": "red_bull",
+    "mercedes_amg": "mercedes",
+    "mercedes": "mercedes",
+    "aston_martin": "aston_martin",
+    "aston_martin_aramco": "aston_martin",
+    "williams_racing": "williams",
+    "williams": "williams",
+    "kick_sauber": "sauber",
+    "sauber": "sauber",
+    "visa_cash_app_rb": "rb",
+    "rb": "rb",
+    "haas_f1_team": "haas",
+    "haas": "haas",
+    "alpine": "alpine",
+    "alpine_f1_team": "alpine"
+  };
+
+  const getErgastConstructorId = (name) => {
+    if (!name) return "";
+    const normalized = name.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (CONSTRUCTOR_ID_MAP[normalized]) {
+      return CONSTRUCTOR_ID_MAP[normalized];
+    }
+    return normalized;
+  };
+
+  const CONSTRUCTOR_CAREER_STATS = {
+    "ferrari": { starts: 1127, wins: 248, podiums: 837, poles: 254, points: 10627.0, titles: 16, fastestLaps: 266 },
+    "mclaren": { starts: 998, wins: 203, podiums: 561, poles: 178, points: 7693.5, titles: 10, fastestLaps: 184 },
+    "red_bull": { starts: 422, wins: 130, podiums: 298, poles: 111, points: 8175.5, titles: 6, fastestLaps: 103 },
+    "mercedes": { starts: 347, wins: 136, podiums: 317, poles: 149, points: 8080.5, titles: 8, fastestLaps: 118 },
+    "williams": { starts: 863, wins: 114, podiums: 314, poles: 128, points: 3777.0, titles: 9, fastestLaps: 134 },
+    "sauber": { starts: 421, wins: 0, podiums: 11, poles: 0, points: 587.0, titles: 0, fastestLaps: 3 },
+    "haas": { starts: 214, wins: 0, podiums: 0, poles: 1, points: 386.0, titles: 0, fastestLaps: 3 },
+    "alpine": { starts: 114, wins: 1, podiums: 6, poles: 0, points: 535.0, titles: 0, fastestLaps: 1 },
+    "aston_martin": { starts: 124, wins: 0, podiums: 9, poles: 0, points: 595.0, titles: 0, fastestLaps: 3 },
+    "rb": { starts: 48, wins: 0, podiums: 1, poles: 0, points: 138.0, titles: 0, fastestLaps: 1 }
+  };
+
+  const fetchTeamProfile = async (constructorId) => {
+    setLoadingTeam(true);
+    setErrorTeam("");
+    setTeamProfileData(null);
+    setIsTeamModalOpen(true);
+
+    const isModern = season === "2026";
+    const profileUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}.json`;
+    const standings2026Url = `https://api.jolpi.ca/ergast/f1/2026/constructors/${constructorId}/constructorStandings.json`;
+    const results2026Url = `https://api.jolpi.ca/ergast/f1/2026/constructors/${constructorId}/results.json`;
+    const qualifying2026Url = `https://api.jolpi.ca/ergast/f1/2026/constructors/${constructorId}/qualifying.json`;
+    const driversUrl = `https://api.jolpi.ca/ergast/f1/${season}/constructors/${constructorId}/drivers.json`;
+
+    try {
+      const requests = [
+        fetch(profileUrl),
+        fetch(standings2026Url),
+        fetch(results2026Url),
+        fetch(qualifying2026Url),
+        fetch(driversUrl)
+      ];
+
+      const responses = await Promise.all(requests);
+      
+      for (const res of responses) {
+        if (!res.ok) throw new Error("データの取得に失敗しました。");
+      }
+
+      const jsonPromises = responses.map(r => r.json());
+      const data = await Promise.all(jsonPromises);
+
+      const profileData = data[0];
+      const standings2026Data = data[1];
+      const results2026Data = data[2];
+      const qualifying2026Data = data[3];
+      const driversData = data[4];
+
+      const constructorObj = profileData.MRData.ConstructorTable.Constructors[0];
+      if (!constructorObj) throw new Error("コンストラクター情報が見つかりませんでした。");
+
+      // 1. Gather 2026 Delta wins and points
+      let wins2026 = 0;
+      let points2026 = 0.0;
+      try {
+        const standingsList = standings2026Data.MRData.StandingsTable.StandingsLists[0];
+        const standing = standingsList && standingsList.ConstructorStandings && standingsList.ConstructorStandings[0];
+        if (standing) {
+          wins2026 = parseInt(standing.wins) || 0;
+          points2026 = parseFloat(standing.points) || 0.0;
+        }
+      } catch (err) {
+        console.warn("2026 team standings parsing error:", err);
+      }
+
+      // 2. Gather 2026 Delta starts, podiums, and fastest laps
+      let starts2026 = 0;
+      let podiums2026 = 0;
+      let fastestLaps2026 = 0;
+      try {
+        const races2026 = results2026Data.MRData.RaceTable.Races || [];
+        const uniqueRaces = new Set();
+        races2026.forEach(race => {
+          const raceKey = `${race.season}_${race.round}`;
+          let hasStart = false;
+          if (race.Results) {
+            race.Results.forEach(res => {
+              const status = res.status || "";
+              if (status !== "Did not start" && status !== "Did not qualify" && status !== "Withdrew") {
+                hasStart = true;
+              }
+              const pos = res.position;
+              if (pos === "1" || pos === "2" || pos === "3") {
+                podiums2026++;
+              }
+              if (res.FastestLap && res.FastestLap.rank === "1") {
+                fastestLaps2026++;
+              }
+            });
+          }
+          if (hasStart) {
+            uniqueRaces.add(raceKey);
+          }
+        });
+        starts2026 = uniqueRaces.size;
+      } catch (err) {
+        console.warn("2026 team results parsing error:", err);
+      }
+
+      // 3. Gather 2026 Delta poles
+      let poles2026 = 0;
+      try {
+        const qualyRaces = qualifying2026Data.MRData.RaceTable.Races || [];
+        qualyRaces.forEach(race => {
+          if (race.QualifyingResults) {
+            race.QualifyingResults.forEach(q => {
+              if (q.position === "1") {
+                poles2026++;
+              }
+            });
+          }
+        });
+      } catch (err) {
+        console.warn("2026 team poles parsing error:", err);
+      }
+
+      // 4. Gather drivers
+      let drivers = [];
+      try {
+        const driversList = driversData.MRData.DriverTable.Drivers || [];
+        drivers = driversList
+          .filter(d => d.code || d.permanentNumber)
+          .map(d => `${d.givenName} ${d.familyName}`);
+      } catch (err) {
+        console.warn("Constructor drivers parsing error:", err);
+      }
+
+      // Merge with 2025 Career Stats Baseline
+      const baseline = CONSTRUCTOR_CAREER_STATS[constructorId] || { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0 };
+      
+      const totalRaces = baseline.starts + starts2026;
+      const totalWins = baseline.wins + (isModern ? wins2026 : 0);
+      const totalPodiums = baseline.podiums + (isModern ? podiums2026 : 0);
+      const totalPoles = baseline.poles + (isModern ? poles2026 : 0);
+      const totalPoints = parseFloat((baseline.points + (isModern ? points2026 : 0)).toFixed(1));
+      const totalTitles = baseline.titles;
+      const totalFastestLaps = baseline.fastestLaps + (isModern ? fastestLaps2026 : 0);
+
+      setTeamProfileData({
+        name: constructorObj.name,
+        nationality: constructorObj.nationality,
+        wikipediaUrl: constructorObj.url,
+        totalRaces,
+        totalWins,
+        totalPodiums,
+        totalPoles,
+        totalPoints,
+        totalTitles,
+        totalFastestLaps,
+        drivers
+      });
+
+    } catch (err) {
+      console.error("Failed to fetch constructor career stats:", err);
+      setErrorTeam(err.message || "データの読み込み中にエラーが発生しました。");
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
+
   // API demo state
   const [apiEndpoint, setApiEndpoint] = useState("drivers");
   const [apiResponse, setApiResponse] = useState(null);
@@ -435,6 +633,7 @@ export default function HistoryView() {
           mapped = standings.map(item => ({
             rank: parseInt(item.position),
             name: item.Constructor.name,
+            constructorId: item.Constructor.constructorId,
             wins: parseInt(item.wins) || 0,
             points: parseFloat(item.points) || 0
           }));
@@ -1137,8 +1336,13 @@ export default function HistoryView() {
                     ) : filteredStandings.length > 0 ? (
                       filteredStandings.map((row) => {
                         const handleRowClick = () => {
-                          const driverId = getErgastDriverId(row.name);
-                          fetchDriverProfile(driverId);
+                          if (dbTab === "drivers") {
+                            const driverId = getErgastDriverId(row.name);
+                            fetchDriverProfile(driverId);
+                          } else {
+                            const constructorId = row.constructorId || getErgastConstructorId(row.name);
+                            fetchTeamProfile(constructorId);
+                          }
                         };
                         return (
                           <tr key={row.rank} className="clickable-row" onClick={handleRowClick}>
@@ -1542,6 +1746,120 @@ export default function HistoryView() {
                 {/* Wiki Link */}
                 <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
                   <a href={driverProfileData.wikipediaUrl} target="_blank" rel="noopener noreferrer" className="btn btn-cyan" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", padding: "0.4rem 0.8rem", textDecoration: "none" }}>
+                    Wikipediaで開く ↗
+                  </a>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Team Profile Modal */}
+      {isTeamModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsTeamModalOpen(false)}>
+          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setIsTeamModalOpen(false)}>
+              &times;
+            </button>
+            
+            {loadingTeam ? (
+              <div style={{ padding: "3rem", textAlign: "center", color: "var(--drs-cyan)", fontFamily: "var(--font-mono)" }}>
+                <div className="spinner" style={{ marginBottom: "1rem" }}></div>
+                <div>📡 Jolpi.ca F1 データベースからチーム最新統計を取得中...</div>
+              </div>
+            ) : errorTeam ? (
+              <div style={{ padding: "2rem", textAlign: "center" }}>
+                <span style={{ fontSize: "2rem" }}>⚠️</span>
+                <p style={{ color: "var(--f1-red)", marginTop: "1rem" }}>{errorTeam}</p>
+                <button className="btn" style={{ marginTop: "1rem", backgroundColor: "var(--border-color)", padding: "0.5rem 1rem" }} onClick={() => setIsTeamModalOpen(false)}>閉じる</button>
+              </div>
+            ) : teamProfileData ? (
+              <div>
+                {/* Header */}
+                <div style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "1rem", marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                    <span style={{ fontSize: "1.5rem" }}>
+                      🏁
+                    </span>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "600", textTransform: "uppercase", letterSpacing: "1px" }}>
+                      {teamProfileData.nationality}
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: "1.75rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "var(--text-primary)" }}>
+                    {teamProfileData.name}
+                  </h2>
+                </div>
+
+                {/* Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                  {/* Info */}
+                  <div>
+                    <h3 style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "0.75rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.25rem" }}>チーム情報</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>本拠地国籍</span>
+                        <span style={{ fontWeight: "600", fontSize: "0.8rem" }}>{teamProfileData.nationality}</span>
+                      </div>
+                      
+                      {/* Active Drivers */}
+                      {teamProfileData.drivers && teamProfileData.drivers.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.5rem", marginTop: "0.5rem" }}>
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>所属ドライバー ({season})</span>
+                          <span style={{ fontWeight: "600", fontSize: "0.8rem", color: "var(--drs-cyan)", lineHeight: "1.4" }}>
+                            {teamProfileData.drivers.join(", ")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Career Stats */}
+                  <div>
+                    <h3 style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "0.75rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.25rem" }}>通算スタッツ (最新)</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {/* Championship Titles */}
+                      {teamProfileData.totalTitles > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", backgroundColor: "rgba(255, 214, 0, 0.08)", padding: "0.25rem 0.5rem", borderRadius: "0.25rem", border: "1px solid rgba(255, 214, 0, 0.2)" }}>
+                          <span style={{ color: "var(--safety-yellow)", fontSize: "0.8rem", fontWeight: "700" }}>🏆 コンストラクターズタイトル</span>
+                          <span style={{ fontWeight: "800", fontSize: "0.8rem", color: "var(--safety-yellow)" }}>{teamProfileData.totalTitles}</span>
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>出走数 (Starts)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem" }}>{teamProfileData.totalRaces}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>優勝数 (Wins)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--safety-yellow)" }}>{teamProfileData.totalWins}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>表彰台 (Podiums)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--drs-cyan)" }}>{teamProfileData.totalPodiums}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>ポールポジション (Poles)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--text-primary)" }}>{teamProfileData.totalPoles}</span>
+                      </div>
+                      
+                      {/* Fastest Laps */}
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>ファステストラップ</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.8rem", color: "var(--telemetry-green)" }}>{teamProfileData.totalFastestLaps}</span>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>累計ポイント (Points)</span>
+                        <span style={{ fontWeight: "700", fontSize: "0.85rem", color: "var(--f1-red)", fontFamily: "var(--font-mono)" }}>{teamProfileData.totalPoints} pts</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wiki Link */}
+                <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
+                  <a href={teamProfileData.wikipediaUrl} target="_blank" rel="noopener noreferrer" className="btn btn-cyan" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", padding: "0.4rem 0.8rem", textDecoration: "none" }}>
                     Wikipediaで開く ↗
                   </a>
                 </div>
