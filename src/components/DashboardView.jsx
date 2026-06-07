@@ -415,9 +415,19 @@ export default function DashboardView({ setActiveTab }) {
       setChatMessages(prev => [...prev, aiMsg]);
     }, 800);
   };
-
   const topDrivers = STANDINGS_2025.drivers.slice(0, 5);
   const topConstructors = STANDINGS_2025.constructors.slice(0, 5);
+  const leaderDriver = STANDINGS_2025.drivers[0];
+  const leaderConstructor = STANDINGS_2025.constructors[0];
+  const leaderTeamKey = leaderConstructor ? Object.keys(TEAMS).find(k => TEAMS[k].name === leaderConstructor.name) : null;
+  const leaderEngine = leaderTeamKey ? TEAMS[leaderTeamKey].engine : "Mercedes";
+
+  const getDriverInitialFormat = (fullName) => {
+    if (!fullName) return "";
+    const parts = fullName.split(" ");
+    if (parts.length <= 1) return fullName;
+    return `${parts[0][0]}. ${parts[parts.length - 1]}`;
+  };
 
   return (
     <div className="main-content">
@@ -445,16 +455,24 @@ export default function DashboardView({ setActiveTab }) {
         <div className="col-3">
           <div className="card red-indicator">
             <span className="form-label">Drivers Leader</span>
-            <h3 style={{ fontSize: "1.75rem", margin: "0.25rem 0", fontFamily: "var(--font-heading)" }}>M. Verstappen</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Red Bull Racing • 145 pts</p>
+            <h3 style={{ fontSize: "1.75rem", margin: "0.25rem 0", fontFamily: "var(--font-heading)" }}>
+              {leaderDriver ? getDriverInitialFormat(leaderDriver.name) : "L. Norris"}
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              {leaderDriver ? `${leaderDriver.team} • ${leaderDriver.points} pts` : "McLaren • 423 pts"}
+            </p>
           </div>
         </div>
         
         <div className="col-3">
           <div className="card cyan-indicator">
             <span className="form-label">Constructors Leader</span>
-            <h3 style={{ fontSize: "1.75rem", margin: "0.25rem 0", fontFamily: "var(--font-heading)" }}>McLaren</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Mercedes Engine • 213 pts</p>
+            <h3 style={{ fontSize: "1.75rem", margin: "0.25rem 0", fontFamily: "var(--font-heading)" }}>
+              {leaderConstructor ? leaderConstructor.name : "McLaren"}
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              {leaderEngine} Engine • {leaderConstructor ? leaderConstructor.points : 833} pts
+            </p>
           </div>
         </div>
         

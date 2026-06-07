@@ -217,28 +217,28 @@ export const STANDINGS_2024 = {
 
 export const STANDINGS_2025 = {
   drivers: [
-    { rank: 1, name: "Max Verstappen", team: "Red Bull Racing", points: 145, wins: 4 },
-    { rank: 2, name: "Charles Leclerc", team: "Ferrari", points: 122, wins: 2 },
-    { rank: 3, name: "Lando Norris", team: "McLaren", points: 118, wins: 1 },
-    { rank: 4, name: "Oscar Piastri", team: "McLaren", points: 95, wins: 0 },
-    { rank: 5, name: "Lewis Hamilton", team: "Ferrari", points: 88, wins: 1 },
-    { rank: 6, name: "George Russell", team: "Mercedes AMG", points: 76, wins: 0 },
-    { rank: 7, name: "Carlos Sainz", team: "Williams Racing", points: 58, wins: 0 },
-    { rank: 8, name: "Kimi Antonelli", team: "Mercedes AMG", points: 34, wins: 0 },
-    { rank: 9, name: "Fernando Alonso", team: "Aston Martin", points: 28, wins: 0 },
-    { rank: 10, name: "Yuki Tsunoda", team: "Visa Cash App RB", points: 16, wins: 0 }
+    { rank: 1, name: "Lando Norris", team: "McLaren", points: 423, wins: 7 },
+    { rank: 2, name: "Max Verstappen", team: "Red Bull Racing", points: 421, wins: 8 },
+    { rank: 3, name: "Oscar Piastri", team: "McLaren", points: 410, wins: 7 },
+    { rank: 4, name: "George Russell", team: "Mercedes AMG", points: 319, wins: 2 },
+    { rank: 5, name: "Charles Leclerc", team: "Ferrari", points: 242, wins: 0 },
+    { rank: 6, name: "Lewis Hamilton", team: "Ferrari", points: 156, wins: 0 },
+    { rank: 7, name: "Kimi Antonelli", team: "Mercedes AMG", points: 150, wins: 0 },
+    { rank: 8, name: "Alexander Albon", team: "Williams Racing", points: 73, wins: 0 },
+    { rank: 9, name: "Carlos Sainz", team: "Williams Racing", points: 64, wins: 0 },
+    { rank: 10, name: "Fernando Alonso", team: "Aston Martin", points: 56, wins: 0 }
   ],
   constructors: [
-    { rank: 1, name: "McLaren", points: 213, wins: 1 },
-    { rank: 2, name: "Ferrari", points: 210, wins: 3 },
-    { rank: 3, name: "Red Bull Racing", points: 175, wins: 4 },
-    { rank: 4, name: "Mercedes AMG", points: 110, wins: 0 },
-    { rank: 5, name: "Williams Racing", points: 62, wins: 0 },
-    { rank: 6, name: "Aston Martin", points: 32, wins: 0 },
-    { rank: 7, name: "Visa Cash App RB", points: 20, wins: 0 },
-    { rank: 8, name: "Haas F1 Team", points: 14, wins: 0 },
-    { rank: 9, name: "Alpine", points: 6, wins: 0 },
-    { rank: 10, name: "Kick Sauber", points: 2, wins: 0 }
+    { rank: 1, name: "McLaren", points: 833, wins: 14 },
+    { rank: 2, name: "Mercedes AMG", points: 469, wins: 2 },
+    { rank: 3, name: "Red Bull Racing", points: 451, wins: 8 },
+    { rank: 4, name: "Ferrari", points: 398, wins: 0 },
+    { rank: 5, name: "Williams Racing", points: 137, wins: 0 },
+    { rank: 6, name: "Visa Cash App RB", points: 92, wins: 0 },
+    { rank: 7, name: "Aston Martin", points: 89, wins: 0 },
+    { rank: 8, name: "Haas F1 Team", points: 79, wins: 0 },
+    { rank: 9, name: "Kick Sauber", points: 70, wins: 0 },
+    { rank: 10, name: "Alpine", points: 22, wins: 0 }
   ]
 };
 

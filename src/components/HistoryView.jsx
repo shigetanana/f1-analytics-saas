@@ -437,7 +437,6 @@ export default function HistoryView() {
     setTeamProfileData(null);
     setIsTeamModalOpen(true);
 
-    const isModern = season === "2026";
     const profileUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}.json`;
     const standings2026Url = `https://api.jolpi.ca/ergast/f1/2026/constructors/${constructorId}/constructorStandings.json`;
     const results2026Url = `https://api.jolpi.ca/ergast/f1/2026/constructors/${constructorId}/results.json`;
@@ -540,9 +539,11 @@ export default function HistoryView() {
       let drivers = [];
       try {
         const driversList = driversData.MRData.DriverTable.Drivers || [];
-        drivers = driversList
-          .filter(d => d.code || d.permanentNumber)
-          .map(d => `${d.givenName} ${d.familyName}`);
+        const hasAnyCodeOrNumber = driversList.some(d => d.code || d.permanentNumber);
+        const filteredDrivers = hasAnyCodeOrNumber
+          ? driversList.filter(d => d.code || d.permanentNumber)
+          : driversList;
+        drivers = filteredDrivers.map(d => `${d.givenName} ${d.familyName}`);
       } catch (err) {
         console.warn("Constructor drivers parsing error:", err);
       }
@@ -551,12 +552,12 @@ export default function HistoryView() {
       const baseline = CONSTRUCTOR_CAREER_STATS[constructorId] || { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0 };
       
       const totalRaces = baseline.starts + starts2026;
-      const totalWins = baseline.wins + (isModern ? wins2026 : 0);
-      const totalPodiums = baseline.podiums + (isModern ? podiums2026 : 0);
-      const totalPoles = baseline.poles + (isModern ? poles2026 : 0);
-      const totalPoints = parseFloat((baseline.points + (isModern ? points2026 : 0)).toFixed(1));
+      const totalWins = baseline.wins + wins2026;
+      const totalPodiums = baseline.podiums + podiums2026;
+      const totalPoles = baseline.poles + poles2026;
+      const totalPoints = parseFloat((baseline.points + points2026).toFixed(1));
       const totalTitles = baseline.titles;
-      const totalFastestLaps = baseline.fastestLaps + (isModern ? fastestLaps2026 : 0);
+      const totalFastestLaps = baseline.fastestLaps + fastestLaps2026;
 
       setTeamProfileData({
         name: constructorObj.name,
