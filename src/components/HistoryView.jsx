@@ -225,7 +225,7 @@ export default function HistoryView() {
     const profileUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}.json`;
     const standings2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/driverStandings.json`;
     const results2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/results.json`;
-    const poles2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/qualifying.json?position=1&limit=1`;
+    const poles2026Url = `https://api.jolpi.ca/ergast/f1/2026/drivers/${apiDriverId}/qualifying.json`;
     
     // For past seasons, query team info pin-pointed
     const pastSeasonUrl = !isModern ? `https://api.jolpi.ca/ergast/f1/${season}/drivers/${apiDriverId}/driverStandings.json` : null;
@@ -303,7 +303,16 @@ export default function HistoryView() {
       // 3. Gather 2026 Delta poles
       let poles2026 = 0;
       try {
-        poles2026 = parseInt(poles2026Data.MRData.total) || 0;
+        const qualyRaces = poles2026Data.MRData.RaceTable.Races || [];
+        qualyRaces.forEach(race => {
+          if (race.QualifyingResults) {
+            race.QualifyingResults.forEach(q => {
+              if (q.position === "1" || q.position === 1) {
+                poles2026++;
+              }
+            });
+          }
+        });
       } catch (err) {
         console.warn("2026 poles parsing error:", err);
       }
