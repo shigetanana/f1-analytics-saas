@@ -7,7 +7,7 @@ import {
   Cpu,
   Code
 } from "lucide-react";
-import { DRIVERS, TEAMS, STANDINGS_2024, STANDINGS_2025, getWeatherDetails } from "../data/f1Data";
+import { DRIVERS, TEAMS, STANDINGS_2024, STANDINGS_2025, getWeatherDetails, HISTORICAL_CHAMPIONS, NATIONALITY_TO_FLAG } from "../data/f1Data";
 
 const DRIVER_ID_MAP = {
   "verstappen": "max_verstappen",
@@ -159,6 +159,10 @@ export default function HistoryView() {
   const [apiStandings, setApiStandings] = useState(null);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [errorStandings, setErrorStandings] = useState("");
+
+  // Historical Champions Sorting state
+  const [championSortField, setChampionSortField] = useState("season");
+  const [championSortOrder, setChampionSortOrder] = useState("desc");
 
   // GP Results states
   const [racesList, setRacesList] = useState([]);
@@ -609,8 +613,52 @@ export default function HistoryView() {
     );
   };
 
+  // Filter and sort historical champions
+  const getFilteredChampions = () => {
+    let list = [...HISTORICAL_CHAMPIONS];
+    
+    // Filter by search query (driverName, constructorName, season)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(item => 
+        item.driverName.toLowerCase().includes(q) ||
+        item.constructorName.toLowerCase().includes(q) ||
+        item.season.toString().includes(q)
+      );
+    }
+    
+    // Sort
+    list.sort((a, b) => {
+      let valA = a[championSortField];
+      let valB = b[championSortField];
+      
+      if (typeof valA === "string") {
+        valA = valA.toLowerCase();
+        valB = valB.toLowerCase();
+      }
+      
+      if (valA < valB) return championSortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return championSortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+    
+    return list;
+  };
+
+  const handleSort = (field) => {
+    if (championSortField === field) {
+      setChampionSortOrder(championSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setChampionSortField(field);
+      setChampionSortOrder("desc");
+    }
+  };
+
   // Pull standings for selected season/tab from api.jolpi.ca
   useEffect(() => {
+    if (dbTab === "champions") {
+      return;
+    }
     const fetchStandings = async () => {
       setLoadingStandings(true);
       setErrorStandings("");
@@ -968,53 +1016,138 @@ export default function HistoryView() {
       <div className="dashboard-grid">
         
         {/* Left Side: Historical Standings Database */}
-        <div className="col-7">
-          <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="col-7" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          
+          <div style={{ display: "flex", gap: "1.5rem", alignItems: "stretch", flexWrap: "wrap" }}>
             
-            {/* Filter controls */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-              <h2 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Database size={20} style={{ color: "var(--f1-red)" }} />
-                Championship Archives
-              </h2>
+            {/* Left Navigation Tree Card */}
+            <div className="card" style={{ width: "220px", flexShrink: 0, padding: "1.25rem 1rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
+                <Database size={16} style={{ color: "var(--f1-red)" }} />
+                Archives Tree
+              </h3>
               
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <select 
-                  className="form-control" 
-                  style={{ width: "120px", padding: "0.3rem 0.5rem" }}
-                  value={season}
-                  onChange={(e) => setSeason(e.target.value)}
-                >
-                  {Array.from({ length: 27 }, (_, i) => (2026 - i).toString()).map(y => (
-                    <option key={y} value={y}>{y} Season</option>
-                  ))}
-                </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {/* Root Node */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.25rem 0", color: "var(--text-primary)", fontWeight: "700", fontSize: "0.9rem" }}>
+                  <span>📂</span>
+                  <span>F1 Archives</span>
+                </div>
+                
+                {/* Child Nodes */}
+                <div style={{ paddingLeft: "1rem", display: "flex", flexDirection: "column", gap: "0.4rem", borderLeft: "1px dashed var(--border-color)", marginLeft: "0.5rem" }}>
+                  
+                  {/* Historical Champions */}
+                  <div 
+                    onClick={() => { setDbTab("champions"); setSessionResults(null); }}
+                    style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "0.5rem", 
+                      padding: "0.45rem 0.6rem", 
+                      borderRadius: "0.375rem", 
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      backgroundColor: dbTab === "champions" ? "var(--f1-red-glow)" : "transparent",
+                      color: dbTab === "champions" ? "var(--f1-red)" : "var(--text-secondary)",
+                      fontWeight: dbTab === "champions" ? "600" : "500",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    <span>🏆</span>
+                    <span>歴代チャンピオン</span>
+                  </div>
 
-                <div style={{ display: "flex", gap: "0.25rem", border: "1px solid var(--border-color)", borderRadius: "0.375rem", padding: "0.15rem" }}>
-                  <button 
-                    className="btn" 
-                    style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", backgroundColor: dbTab === "drivers" ? "var(--f1-red)" : "transparent", color: dbTab === "drivers" ? "white" : "var(--text-secondary)" }}
+                  {/* Drivers */}
+                  <div 
                     onClick={() => { setDbTab("drivers"); setSessionResults(null); }}
+                    style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "0.5rem", 
+                      padding: "0.45rem 0.6rem", 
+                      borderRadius: "0.375rem", 
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      backgroundColor: dbTab === "drivers" ? "var(--f1-red-glow)" : "transparent",
+                      color: dbTab === "drivers" ? "var(--f1-red)" : "var(--text-secondary)",
+                      fontWeight: dbTab === "drivers" ? "600" : "500",
+                      transition: "all 0.15s ease"
+                    }}
                   >
-                    Drivers
-                  </button>
-                  <button 
-                    className="btn" 
-                    style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", backgroundColor: dbTab === "constructors" ? "var(--f1-red)" : "transparent", color: dbTab === "constructors" ? "white" : "var(--text-secondary)" }}
+                    <span>🏎️</span>
+                    <span>ドライバー</span>
+                  </div>
+
+                  {/* Teams */}
+                  <div 
                     onClick={() => { setDbTab("constructors"); setSessionResults(null); }}
+                    style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "0.5rem", 
+                      padding: "0.45rem 0.6rem", 
+                      borderRadius: "0.375rem", 
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      backgroundColor: dbTab === "constructors" ? "var(--f1-red-glow)" : "transparent",
+                      color: dbTab === "constructors" ? "var(--f1-red)" : "var(--text-secondary)",
+                      fontWeight: dbTab === "constructors" ? "600" : "500",
+                      transition: "all 0.15s ease"
+                    }}
                   >
-                    Teams
-                  </button>
-                  <button 
-                    className="btn" 
-                    style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", backgroundColor: dbTab === "races" ? "var(--f1-red)" : "transparent", color: dbTab === "races" ? "white" : "var(--text-secondary)" }}
+                    <span>👥</span>
+                    <span>チーム</span>
+                  </div>
+
+                  {/* GP Results */}
+                  <div 
                     onClick={() => { setDbTab("races"); setSessionResults(null); }}
+                    style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "0.5rem", 
+                      padding: "0.45rem 0.6rem", 
+                      borderRadius: "0.375rem", 
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      backgroundColor: dbTab === "races" ? "var(--f1-red-glow)" : "transparent",
+                      color: dbTab === "races" ? "var(--f1-red)" : "var(--text-secondary)",
+                      fontWeight: dbTab === "races" ? "600" : "500",
+                      transition: "all 0.15s ease"
+                    }}
                   >
-                    GP Results
-                  </button>
+                    <span>🏁</span>
+                    <span>リザルト</span>
+                  </div>
+
                 </div>
               </div>
             </div>
+
+            {/* Table Card */}
+            <div className="card" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+              
+              {/* Filter controls */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                <h2 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <Database size={20} style={{ color: "var(--f1-red)" }} />
+                  {dbTab === "champions" ? "Historical Champions" : dbTab === "drivers" ? "Driver Standings" : dbTab === "constructors" ? "Team Standings" : "GP Results"}
+                </h2>
+                
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <select 
+                    className="form-control" 
+                    style={{ width: "120px", padding: "0.3rem 0.5rem", display: dbTab === "champions" ? "none" : "block" }}
+                    value={season}
+                    onChange={(e) => setSeason(e.target.value)}
+                  >
+                    {Array.from({ length: 27 }, (_, i) => (2026 - i).toString()).map(y => (
+                      <option key={y} value={y}>{y} Season</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
             {/* GP selector if tab is races */}
             {dbTab === "races" && racesList.length > 0 && (
@@ -1319,6 +1452,87 @@ export default function HistoryView() {
                   </tbody>
                 </table>
               </div>
+            ) : dbTab === "champions" ? (
+              <div className="table-container">
+                <table className="f1-table">
+                  <thead>
+                    <tr>
+                      <th 
+                        onClick={() => handleSort("season")} 
+                        style={{ width: "95px", cursor: "pointer", userSelect: "none" }}
+                      >
+                        Season {championSortField === "season" ? (championSortOrder === "asc" ? "▲" : "▼") : "↕"}
+                      </th>
+                      <th>Champion</th>
+                      <th>Nationality</th>
+                      <th>Team</th>
+                      <th 
+                        onClick={() => handleSort("wins")} 
+                        style={{ textAlign: "right", cursor: "pointer", userSelect: "none", width: "90px" }}
+                      >
+                        Wins {championSortField === "wins" ? (championSortOrder === "asc" ? "▲" : "▼") : "↕"}
+                      </th>
+                      <th 
+                        onClick={() => handleSort("points")} 
+                        style={{ textAlign: "right", cursor: "pointer", userSelect: "none", width: "100px" }}
+                      >
+                        Points {championSortField === "points" ? (championSortOrder === "asc" ? "▲" : "▼") : "↕"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getFilteredChampions().length > 0 ? (
+                      getFilteredChampions().map((row) => {
+                        const flag = NATIONALITY_TO_FLAG[row.nationality] || "🏳️";
+                        
+                        const handleDriverClick = (e) => {
+                          e.stopPropagation();
+                          const driverId = getErgastDriverId(row.driverName);
+                          fetchDriverProfile(driverId);
+                        };
+
+                        const handleTeamClick = (e) => {
+                          e.stopPropagation();
+                          const constructorId = row.constructorId || getErgastConstructorId(row.constructorName);
+                          fetchTeamProfile(constructorId);
+                        };
+
+                        return (
+                          <tr key={row.season}>
+                            <td style={{ fontWeight: "bold", fontFamily: "var(--font-heading)" }}>
+                              <span className="badge badge-yellow" style={{ fontSize: "0.7rem", padding: "0.2rem 0.4rem" }}>{row.season}</span>
+                            </td>
+                            <td 
+                              className="clickable-row" 
+                              onClick={handleDriverClick} 
+                              style={{ fontWeight: "600", color: "var(--text-primary)" }}
+                            >
+                              <span style={{ marginRight: "0.5rem" }}>{flag}</span>
+                              {row.driverName}
+                            </td>
+                            <td style={{ color: "var(--text-secondary)" }}>{row.nationality}</td>
+                            <td 
+                              className="clickable-row" 
+                              onClick={handleTeamClick} 
+                              style={{ color: "var(--drs-cyan)" }}
+                            >
+                              {row.constructorName}
+                            </td>
+                            <td style={{ textAlign: "right" }}>{row.wins}</td>
+                            <td style={{ textAlign: "right", fontWeight: "700", color: "var(--drs-cyan)" }}>{row.points}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
+                          No championship records matched your search query.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="table-container">
                 <table className="f1-table">
@@ -1378,6 +1592,7 @@ export default function HistoryView() {
             )}
 
           </div>
+        </div>
 
           {/* API Query Connector Panel */}
           <div className="card" style={{ marginTop: "1.5rem" }}>
