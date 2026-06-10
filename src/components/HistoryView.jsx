@@ -1016,7 +1016,7 @@ export default function HistoryView() {
       <div className="dashboard-grid">
         
         {/* Left Side: Historical Standings Database */}
-        <div className="col-7" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <div className="col-8" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           
           <div style={{ display: "flex", gap: "1.5rem", alignItems: "stretch", flexWrap: "wrap" }}>
             
@@ -1662,7 +1662,7 @@ export default function HistoryView() {
         </div>
 
         {/* Right Side: Head-to-Head Comparison */}
-        <div className="col-5">
+        <div className="col-4">
           <div className="card red-indicator" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <h2 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <UserCheck size={20} style={{ color: "var(--f1-red)" }} />
