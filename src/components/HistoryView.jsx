@@ -345,7 +345,69 @@ export default function HistoryView() {
       }
 
       // Merge with 2025 Career Stats Baseline
-      const baseline = DRIVER_CAREER_STATS[apiDriverId] || { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, teams: [] };
+      let baseline = DRIVER_CAREER_STATS[apiDriverId];
+      if (!baseline) {
+        // Fetch all-time stats dynamically from Ergast API
+        const startsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results.json?limit=1`;
+        const winsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results/1.json?limit=1`;
+        const p2Url = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results/2.json?limit=1`;
+        const p3Url = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/results/3.json?limit=1`;
+        const polesUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/qualifying/1.json?limit=1`;
+        const championshipsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/driverStandings/1.json`;
+        const standingsUrl = `https://api.jolpi.ca/ergast/f1/drivers/${apiDriverId}/driverStandings.json`;
+
+        try {
+          const statsResponses = await Promise.all([
+            fetch(startsUrl),
+            fetch(winsUrl),
+            fetch(p2Url),
+            fetch(p3Url),
+            fetch(polesUrl),
+            fetch(championshipsUrl),
+            fetch(standingsUrl)
+          ]);
+
+          const statsData = await Promise.all(statsResponses.map(r => r.json()));
+          
+          const startsCount = parseInt(statsData[0].MRData.total) || 0;
+          const winsCount = parseInt(statsData[1].MRData.total) || 0;
+          const p2Count = parseInt(statsData[2].MRData.total) || 0;
+          const p3Count = parseInt(statsData[3].MRData.total) || 0;
+          const polesCount = parseInt(statsData[4].MRData.total) || 0;
+          const titlesCount = parseInt(statsData[5].MRData.total) || 0;
+          
+          let pointsSum = 0.0;
+          const teamsSet = new Set();
+          try {
+            const standingsLists = statsData[6].MRData.StandingsTable.StandingsLists || [];
+            standingsLists.forEach(list => {
+              const standing = list.DriverStandings && list.DriverStandings[0];
+              if (standing) {
+                pointsSum += parseFloat(standing.points) || 0.0;
+                if (standing.Constructors) {
+                  standing.Constructors.forEach(c => teamsSet.add(c.name));
+                }
+              }
+            });
+          } catch (e) {
+            console.warn("Error calculating driver points/teams:", e);
+          }
+
+          baseline = {
+            starts: startsCount,
+            wins: winsCount,
+            podiums: winsCount + p2Count + p3Count,
+            poles: polesCount,
+            points: parseFloat(pointsSum.toFixed(1)),
+            titles: titlesCount,
+            fastestLaps: 0,
+            teams: Array.from(teamsSet)
+          };
+        } catch (err) {
+          console.error("Failed to fetch historical driver stats:", err);
+          baseline = { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, teams: [] };
+        }
+      }
       const totalRaces = baseline.starts + starts2026;
       const totalWins = baseline.wins + wins2026;
       const totalPodiums = baseline.podiums + podiums2026;
@@ -562,7 +624,65 @@ export default function HistoryView() {
       }
 
       // Merge with 2025 Career Stats Baseline
-      const baseline = CONSTRUCTOR_CAREER_STATS[constructorId] || { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0 };
+      let baseline = CONSTRUCTOR_CAREER_STATS[constructorId];
+      if (!baseline) {
+        // Fetch all-time stats dynamically from Ergast API
+        const startsUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/results.json?limit=1`;
+        const winsUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/results/1.json?limit=1`;
+        const p2Url = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/results/2.json?limit=1`;
+        const p3Url = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/results/3.json?limit=1`;
+        const polesUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/qualifying/1.json?limit=1`;
+        const championshipsUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/constructorStandings/1.json`;
+        const standingsUrl = `https://api.jolpi.ca/ergast/f1/constructors/${constructorId}/constructorStandings.json`;
+
+        try {
+          const statsResponses = await Promise.all([
+            fetch(startsUrl),
+            fetch(winsUrl),
+            fetch(p2Url),
+            fetch(p3Url),
+            fetch(polesUrl),
+            fetch(championshipsUrl),
+            fetch(standingsUrl)
+          ]);
+
+          const statsData = await Promise.all(statsResponses.map(r => r.json()));
+          
+          const startsCount = parseInt(statsData[0].MRData.total) || 0;
+          const winsCount = parseInt(statsData[1].MRData.total) || 0;
+          const p2Count = parseInt(statsData[2].MRData.total) || 0;
+          const p3Count = parseInt(statsData[3].MRData.total) || 0;
+          const polesCount = parseInt(statsData[4].MRData.total) || 0;
+          const titlesCount = parseInt(statsData[5].MRData.total) || 0;
+          
+          let pointsSum = 0.0;
+          try {
+            const standingsLists = statsData[6].MRData.StandingsTable.StandingsLists || [];
+            standingsLists.forEach(list => {
+              const standing = list.ConstructorStandings && list.ConstructorStandings[0];
+              if (standing) {
+                pointsSum += parseFloat(standing.points) || 0.0;
+              }
+            });
+          } catch (e) {
+            console.warn("Error calculating constructor points:", e);
+          }
+
+          baseline = {
+            starts: startsCount,
+            wins: winsCount,
+            podiums: winsCount + p2Count + p3Count,
+            poles: polesCount,
+            points: parseFloat(pointsSum.toFixed(1)),
+            titles: titlesCount,
+            fastestLaps: 0,
+            principal: "N/A"
+          };
+        } catch (err) {
+          console.error("Failed to fetch historical constructor stats:", err);
+          baseline = { starts: 0, wins: 0, podiums: 0, poles: 0, points: 0.0, titles: 0, fastestLaps: 0, principal: "N/A" };
+        }
+      }
       
       const totalRaces = baseline.starts + starts2026;
       const totalWins = baseline.wins + wins2026;
